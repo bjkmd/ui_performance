@@ -1,0 +1,33 @@
+{
+  "browsertime": {
+    "browser": "chrome",
+    "viewPort": "1920x1080",
+    "iterations": 1,
+    "spa": true,
+    "video": true,
+    "visualElements": true,
+    "visualMetric": true,
+    "pageCompleteWaitTime": 10000
+  },
+  "chrome": {
+      "collectLongTasks": true
+  },
+  "graphite": {
+    "host": "OUR_HOST"
+  },
+  "html": {
+    "showScript": true,
+    "pageSummaryMetrics": [
+      "timings.VisualComplete99",
+      "timings.backEndTime",
+      "transferSize.total",
+      "transferSize.javascript",
+      "transferSize.image"
+    ]
+  },
+  "screenshot": {
+    "type": "jpg"
+  },
+  "gzipHAR": true,
+  "multi": true
+}

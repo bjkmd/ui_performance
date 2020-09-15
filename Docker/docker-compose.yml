@@ -1,0 +1,126 @@
+version: '3'
+services:
+   compare:
+     image: compare
+     build: ./har_compare
+     container_name: compare
+     volumes:
+       - influxdb:/var/lib/influxdb
+     ports:
+       - "8000:8000"
+     expose:
+        - 8000
+     restart: always
+   grafana:
+     container_name: grafana
+     depends_on:
+       - graphite
+     links:
+       - influxdb:influxdb
+       - graphite
+     image: grafana/grafana
+     build: ./grafana
+     user: "104"
+     ports:
+       - "3000:3000"
+     environment:
+       - GF_SECURITY_ADMIN_PASSWORD=admin
+       - GF_SECURITY_ADMIN_USER=admin
+       - GF_AUTH_ANONYMOUS_ENABLED=true
+       - GF_USERS_ALLOW_SIGN_UP=false
+       - GF_USERS_ALLOW_ORG_CREATE=false
+       - GF_INSTALL_PLUGINS=briangann-datatable-panel
+     volumes:
+       - grafana-home:/var/lib/grafana/
+       - grafana-conf:/etc/grafana/
+     restart: always 
+   influxdb:
+     image: influxdb
+     build: ./influxdb
+     container_name: influxdb
+     volumes:
+       - influxdb:/var/lib/influxdb
+     ports:
+       - "8086:8086"
+     expose:
+        - 8086
+     restart: always
+   telegraf:
+     image: telegraf
+     build: ./telegraf
+     hostname: telegraf-loadgenerator
+     container_name: telegraf
+     #network_mode: "container:influxdb"
+     volumes:
+       - /var/run/docker.sock:/var/run/docker.sock
+       # - "c:/:/rootfs/proc:ro"
+   #environment:
+       # - SYS_PATH_PREFIX=/rootfs
+     restart: always
+   graphite:
+      image: sitespeedio/graphite:1.1.5-12
+      container_name: graphite
+      ports:
+        - "2004:2003"
+        - "8080:80"
+      restart: always
+      volumes:
+        - whisper:/opt/graphite/storage/whisper
+        # - ./graphite/graphite.db:/opt/graphite/storage/graphite.db
+        #- ./graphite/conf/storage-schemas.conf:/opt/graphite/conf/storage-schemas.conf
+        #- ./graphite/conf/storage-aggregation.conf:/opt/graphite/conf/storage-aggregation.conf
+        #- ./graphite/conf/carbon.conf:/opt/graphite/conf/carbon.conf
+      restart: always
+   grafana-setup:
+      image: sitespeedio/grafana-bootstrap:12.1.0
+      container_name: grafana-setup
+      links:
+        - grafana
+      environment:
+        - GF_PASSWORD=admin
+        - GF_USER=admin
+   portainer:
+      image: portainer/portainer
+      container_name: portainer
+      ports:
+       - "9000:9000"
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+      restart: always
+   webpagetestserver:
+      build: ./wptserver
+      container_name: wptserver
+      image: webpagetest/server
+      ports:
+        #expose 4000 port instead of 80 when sitespeed will add webpagetest.port parameter https://github.com/sitespeedio/sitespeed.io/issues/1855
+        #- "4000:80"
+        - "80:80"
+      volumes:
+        - webpagetest-results:/var/www/html/results/
+        - webpagetest-settings:/var/www/html/settings/
+        - webpagetest-logs:/var/www/html/logs/
+      restart: always
+   webpagetestagent:
+      image: webpagetest/agent
+      container_name: wptagent
+      depends_on:
+        - webpagetestserver 
+      ports:
+        - "4001:80"
+      environment:
+        - SERVER_URL=http://wptserver:80/work/
+        - LOCATION=Test
+        # You need to also pass EXTRA_ARGS="--shaper none" to tell the agent that shaping isn't possible, 
+        # otherwise it will default to the netem shaper on Linux (in Docker) and still try to set up the configuration.
+        # https://github.com/WPO-Foundation/wptagent/issues/48
+        # -vvvvv - debug mode(more v - more detailed debug)
+        - EXTRA_ARGS=-vvvvv --shaper none
+      restart: always
+volumes:
+    grafana-home:
+    grafana-conf:
+    whisper:
+    webpagetest-results:
+    webpagetest-settings:
+    webpagetest-logs:
+    influxdb:

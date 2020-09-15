@@ -1,0 +1,23 @@
+{
+  "browsertime": {
+    "spa": true,
+    "viewPort": "1920x1080",
+    "visualElements": true,
+    "iterations": 1,
+    "browser": "chrome",
+    "video": true,
+    "visualMetric": true,
+    "pageLoadStrategy": "none",
+    "pageCompleteCheckStartWait": 5000,
+    "pageCompleteCheckPollTimeout": 1000,
+    "pageCompleteWaitTime": 10000
+  },
+  "gzipHAR": true,
+  "html": {
+    "fetchHARFiles": true,
+    "showScript": true
+  },
+  "screenshot": {
+    "type": "jpg"
+  }
+}
